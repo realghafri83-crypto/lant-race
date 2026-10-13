@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>سباق أبطال النباتات</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--card:#fffffff0;--ink:#12324a;--gold:#ffb300}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--card:#17283af0;--ink:#f4f8ff}}
+:root[data-theme="dark"]{--card:#17283af0;--ink:#f4f8ff}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:#87ceeb;font-family:Tahoma,Arial,sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hud{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:8px;right:8px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;pointer-events:none}
+.pill{background:var(--card);color:var(--ink);border-radius:22px;padding:5px 14px;font-size:clamp(16px,3.4vw,24px);font-weight:bold;box-shadow:0 3px 10px #0005}
+#bar{width:min(30vw,200px);height:12px;background:#0003;border-radius:6px;overflow:hidden;display:inline-block;vertical-align:middle;margin-inline-start:8px}
+#bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd54f,#ff9800)}
+#q{position:fixed;top:calc(72px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:min(94vw,760px);background:var(--card);color:var(--ink);border-radius:20px;padding:10px 16px;text-align:center;font-size:clamp(18px,4vw,30px);font-weight:bold;line-height:1.6;box-shadow:0 6px 18px #0006;display:none;pointer-events:none}
+#q small{display:block;font-size:.6em;opacity:.7}
+#q svg{display:block;margin:6px auto 0;height:min(11vh,72px);max-width:100%;border-radius:12px}
+#q .a{display:flex;gap:10px;justify-content:center;font-size:.7em;margin-top:4px}
+#q .a b{padding:2px 12px;border-radius:12px;color:#fff}
+.ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0a1e3466;z-index:5}
+.box{background:var(--card);color:var(--ink);border-radius:26px;padding:22px 26px;width:min(92vw,560px);text-align:center;box-shadow:0 10px 30px #0007;line-height:1.7;font-size:clamp(16px,3.6vw,22px)}
+.box h1{margin:0 0 6px;font-size:clamp(28px,7vw,46px)}
+.box button{font:inherit;font-size:1.3em;font-weight:bold;border:0;border-radius:40px;padding:12px 38px;margin-top:12px;background:linear-gradient(#ffca28,#fb8c00);color:#3a1d00;box-shadow:0 6px 0 #b45f00;cursor:pointer}
+#ban{position:fixed;top:62%;left:50%;transform:translate(-50%,-50%) scale(.8);background:var(--card);color:var(--ink);padding:14px 30px;border-radius:26px;font-size:clamp(22px,5vw,40px);font-weight:bold;opacity:0;transition:.3s;pointer-events:none;text-align:center;box-shadow:0 8px 24px #0006}
+#ban.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#fade{position:fixed;inset:0;background:#000;opacity:0;transition:opacity .5s;pointer-events:none}
+.ctl{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:clamp(78px,16vw,120px);height:clamp(78px,16vw,120px);border-radius:50%;border:4px solid #fff;background:#ffffff55;color:#fff;font-size:clamp(36px,8vw,56px);display:flex;align-items:center;justify-content:center;touch-action:none;backdrop-filter:blur(3px)}
+.ctl:active{background:#ffb300aa}
+#bl{left:16px}#br{right:16px}
+</style></head><body>
+<canvas id="c"></canvas>
+<div class="hud"><div class="pill">⭐ <span id="sc">0</span></div><div class="pill">🪙 <span id="cn">0</span></div><div class="pill">🚀 <span id="sd">0</span> كم/س</div><div class="pill">المحطة <span id="st">1</span>/4<span id="bar"><i></i></span></div></div>
+<div id="q"></div><div id="ban"></div><div id="fade"></div>
+<div class="ctl" id="bl">◀</div><div class="ctl" id="br">▶</div>
+<div class="ov" id="menu"><div class="box"><h1>🏎️ سباق أبطال النباتات</h1>
+<div>العلوم – الصف الثالث<br>الوحدة الأولى: تحقّق من تقدّمك!</div>
+<div style="margin:8px 0">قُد السيارة بالسهمين ◀ ▶ (أو بمفاتيح الأسهم)، واعبر <b>بوابة الإجابة الصحيحة</b>، واجمع العملات الذهبية 🪙 وتجنّب المخروطات!</div>
+<div style="font-size:.85em;opacity:.8">إعداد الأستاذة: مريم الغافري</div>
+<button id="go">ابدأ السباق</button></div></div>
+<div class="ov" id="end" style="display:none"><div class="box"><h1>🏆 أبطال العلوم!</h1><div id="res"></div><button id="again">سباق جديد</button></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+var QS=[
+"ما الجزء الذي يثبّت النبتة ويمتص الماء؟","الجذور","الزهرة",
+"ما الجزء الذي ينقل الماء إلى باقي النبتة؟","الساق","الورقة",
+"ما الجزء الذي ينتج البذور؟","الزهرة","الجذور",
+"أين تصنع النبتة غذاءها؟","الأوراق","الجذور",
+"ماذا تستخدم الأوراق لصنع الغذاء؟","ضوء الشمس","الأصيص",
+"الأزهار الجميلة تساعد النبتة على إنتاج…","البذور الجديدة","الطعام",
+"ماذا تحتاج النبتة لتنمو؟","الضوء والماء","الطعام والأصيص",
+"هل تأكل النبتة طعامنا؟","لا، تصنع غذاءها","نعم، تأكل طعامنا",
+"الأصيص مجرد…","بيت للنبتة","شرط للنمو",
+"ماذا يستقصي فيصل وجاسم في تجربتهما؟","هل تحتاج النبتة للضوء؟","هل تحتاج النبتة للطعام؟",
+"في الاختبار العادل، الفرق الوحيد هو…","الضوء","نوع النبات",
+"أي نبتة ستنمو بشكل أفضل؟","التي في الضوء","التي في الظلام"];
+var SVGI="<svg viewBox=\"0 0 360 112\" xmlns=\"http://www.w3.org/2000/svg\" style=\"font-family:Tahoma,Arial\"><rect x=\"3\" y=\"3\" width=\"170\" height=\"106\" rx=\"16\" fill=\"#b0bec5\" stroke=\"#3b2a1a\" stroke-width=\"3\" stroke-linejoin=\"round\"/><rect x=\"187\" y=\"3\" width=\"170\" height=\"106\" rx=\"16\" fill=\"#81d4fa\" stroke=\"#3b2a1a\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M62 80h50l-5 24h-40z\" fill=\"#e0773f\" stroke=\"#3b2a1a\" stroke-width=\"3\" stroke-linejoin=\"round\"/><rect x=\"46\" y=\"22\" width=\"82\" height=\"62\" rx=\"8\" fill=\"#6d4c41\" stroke=\"#3b2a1a\" stroke-width=\"3\" stroke-linejoin=\"round\"/><rect x=\"80\" y=\"22\" width=\"14\" height=\"62\" fill=\"#a1887f\" stroke=\"#3b2a1a\" stroke-width=\"2\"/><circle cx=\"64\" cy=\"54\" r=\"5\" fill=\"#fff\"/><circle cx=\"66\" cy=\"55\" r=\"2.5\" fill=\"#000\"/><circle cx=\"110\" cy=\"54\" r=\"5\" fill=\"#fff\"/><circle cx=\"112\" cy=\"55\" r=\"2.5\" fill=\"#000\"/><path d=\"M80 68q8 -6 16 0\" fill=\"none\" stroke=\"#fff\" stroke-width=\"3\" stroke-linecap=\"round\"/><text x=\"88\" y=\"17\" font-size=\"13\" font-weight=\"bold\" text-anchor=\"middle\" fill=\"#1b2a33\">تحت صندوق</text><path d=\"M242 80h50l-5 24h-40z\" fill=\"#e0773f\" stroke=\"#3b2a1a\" stroke-width=\"3\" stroke-linejoin=\"round\"/><line x1=\"267\" y1=\"80\" x2=\"267\" y2=\"58\" stroke=\"#2e7d32\" stroke-width=\"5\" stroke-linecap=\"round\"/><ellipse cx=\"252\" cy=\"62\" rx=\"13\" ry=\"7\" fill=\"#66bb6a\" stroke=\"#3b2a1a\" stroke-width=\"3\" stroke-linejoin=\"round\" transform=\"rotate(-25 252 62)\"/><ellipse cx=\"282\" cy=\"62\" rx=\"13\" ry=\"7\" fill=\"#66bb6a\" stroke=\"#3b2a1a\" stroke-width=\"3\" stroke-linejoin=\"round\" transform=\"rotate(25 282 62)\"/><circle cx=\"267\" cy=\"46\" r=\"15\" fill=\"#9ccc65\" stroke=\"#3b2a1a\" stroke-width=\"3\" stroke-linejoin=\"round\"/><circle cx=\"262\" cy=\"44\" r=\"3\" fill=\"#000\"/><circle cx=\"272\" cy=\"44\" r=\"3\" fill=\"#000\"/><path d=\"M260 51q7 7 14 0\" fill=\"none\" stroke=\"#000\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><circle cx=\"318\" cy=\"40\" r=\"13\" fill=\"#ffd54f\" stroke=\"#3b2a1a\" stroke-width=\"3\" stroke-linejoin=\"round\"/><line x1=\"335\" y1=\"40\" x2=\"342\" y2=\"40\" stroke=\"#ff9800\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"330\" y1=\"52\" x2=\"335\" y2=\"57\" stroke=\"#ff9800\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"318\" y1=\"57\" x2=\"318\" y2=\"64\" stroke=\"#ff9800\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"306\" y1=\"52\" x2=\"301\" y2=\"57\" stroke=\"#ff9800\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"301\" y1=\"40\" x2=\"294\" y2=\"40\" stroke=\"#ff9800\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"306\" y1=\"28\" x2=\"301\" y2=\"23\" stroke=\"#ff9800\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"318\" y1=\"23\" x2=\"318\" y2=\"16\" stroke=\"#ff9800\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"330\" y1=\"28\" x2=\"335\" y2=\"23\" stroke=\"#ff9800\" stroke-width=\"4\" stroke-linecap=\"round\"/><circle cx=\"314\" cy=\"38\" r=\"2\" fill=\"#000\"/><circle cx=\"322\" cy=\"38\" r=\"2\" fill=\"#000\"/><path d=\"M313 44q5 5 10 0\" fill=\"none\" stroke=\"#000\" stroke-width=\"2\" stroke-linecap=\"round\"/><text x=\"250\" y=\"17\" font-size=\"13\" font-weight=\"bold\" text-anchor=\"middle\" fill=\"#1b2a33\">في الشمس</text></svg>";
+var ST=[{n:"حلبة سباق السيارات",sky:0x7ec8ff,gr:0x58b348,rd:0x3b3f46,sp:46},
+{n:"شارع المدينة الغائم",sky:0xa3adb8,gr:0x7b828c,rd:0x34373d,sp:34},
+{n:"طريق داخل الغابة",sky:0xbfe6c4,gr:0x2f7a3a,rd:0x7a6249,sp:34},
+{n:"طريق بجانب البحر",sky:0x8fd3ff,gr:0xe8d49a,rd:0x44484f,sp:34}];
+var LEN=900,GATES=[260,520,780],K=12,SP=24;
+var $=function(i){return document.getElementById(i)};
+var R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));
+var S=new THREE.Scene(),cam=new THREE.PerspectiveCamera(65,1,.1,400);
+function rs(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.fov=cam.aspect<1?82:65;cam.updateProjectionMatrix()}
+addEventListener('resize',rs);rs();
+S.add(new THREE.HemisphereLight(0xffffff,0x778899,.95));
+var dl=new THREE.DirectionalLight(0xffffff,.7);dl.position.set(20,40,15);S.add(dl);
+function M(c){return new THREE.MeshLambertMaterial({color:c})}
+function bx(w,h,d,c,x,y,z,p){var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c));m.position.set(x,y,z);p&&p.add(m);return m}
+function cy(a,b,h,c,x,y,z,p,n){var m=new THREE.Mesh(new THREE.CylinderGeometry(a,b,h,n||10),M(c));m.position.set(x,y,z);p&&p.add(m);return m}
+function cn(r,h,c,x,y,z,p){var m=new THREE.Mesh(new THREE.ConeGeometry(r,h,10),M(c));m.position.set(x,y,z);p&&p.add(m);return m}
+function sp_(r,c,x,y,z,p){var m=new THREE.Mesh(new THREE.SphereGeometry(r,10,8),M(c));m.position.set(x,y,z);p&&p.add(m);return m}
+var gnd=new THREE.Mesh(new THREE.PlaneGeometry(700,800),M(0x58b348));gnd.rotation.x=-Math.PI/2;S.add(gnd);
+var wat=new THREE.Mesh(new THREE.PlaneGeometry(300,800),M(0x1e90c8));wat.rotation.x=-Math.PI/2;wat.position.set(159,.05,0);S.add(wat);
+var rg=new THREE.Group();S.add(rg);
+var road=bx(14,.04,800,0x3b3f46,0,.03,0,rg);
+bx(.35,.05,800,0xffffff,-6.7,.06,0,rg);bx(.35,.05,800,0xffffff,6.7,.06,0,rg);
+var dash=[];for(var i=0;i<30;i++){dash.push(bx(.3,.05,5,0xffffff,0,.06,0,rg))}
+var car=new THREE.Group(),wh=[];
+bx(2.3,.8,4.4,0xe53935,0,.85,0,car);bx(1.9,.75,2.1,0x90caf9,0,1.6,.3,car);bx(.5,.82,4.42,0xffffff,0,.85,0,car);
+bx(2.4,.15,.7,0x222222,0,1.7,2.0,car);bx(.2,.5,.2,0x222222,-.8,1.45,2,car);bx(.2,.5,.2,0x222222,.8,1.45,2,car);
+bx(.45,.25,.1,0xfff59d,-.75,.95,-2.22,car);bx(.45,.25,.1,0xfff59d,.75,.95,-2.22,car);
+[[-1.2,-1.4],[1.2,-1.4],[-1.2,1.4],[1.2,1.4]].forEach(function(p){var g=new THREE.CylinderGeometry(.55,.55,.45,16);g.rotateZ(Math.PI/2);var w=new THREE.Mesh(g,M(0x1b1b1b));w.position.set(p[0],.55,p[1]);car.add(w);wh.push(w)});
+S.add(car);
+var wc=document.createElement('canvas');wc.width=64;wc.height=128;var wx=wc.getContext('2d');wx.fillStyle='#ececec';wx.fillRect(0,0,64,128);
+for(var y=6;y<128;y+=16)for(var x=6;x<64;x+=20){wx.fillStyle=Math.random()<.2?'#ffe082':'#51708f';wx.fillRect(x,y,12,9)}
+var winTex=new THREE.CanvasTexture(wc);winTex.wrapS=winTex.wrapT=THREE.RepeatWrapping;winTex.repeat.set(2,3);
+function f0(s){var g=new THREE.Group(),c=[0xff7043,0x42a5f5,0xffee58,0xab47bc][Math.random()*4|0];
+bx(9,6,16,0xe0e0e0,0,3,0,g);bx(9.2,1.2,16.2,c,0,5.4,0,g);bx(8,.5,15,0x7a7a7a,0,.3,0,g);
+for(var k=0;k<6;k++)sp_(.35,[0xffcc80,0xef9a9a,0x90caf9][k%3],-3.5+k*1.4,6.4,(k%2)*3-1.5,g);
+bx(.8,1,10,Math.random()<.5?0x1565c0:0xffffff,-s*5.8,.5,0,g);g.position.x=s*14;return g}
+function f1(s){var g=new THREE.Group(),h=14+Math.random()*22,w=8+Math.random()*4;
+var b=new THREE.Mesh(new THREE.BoxGeometry(w,h,14),new THREE.MeshLambertMaterial({map:winTex,color:[0x9fb4c8,0xc9b8a8,0xb0b7c3,0xd7c9b0][Math.random()*4|0]}));b.position.y=h/2;g.add(b);
+var lx=-s*(4+w/2);bx(.25,5,.25,0x444444,lx,2.5,6,g);bx(.9,.2,.4,0xfff3b0,lx-s*.4,5,6,g);g.position.x=s*(12+w/2);return g}
+function f2(s){var g=new THREE.Group(),k=.8+Math.random();
+cy(.5,.7,4,0x6d4c41,0,2,0,g);cn(3,5,0x2e7d32,0,5.5,0,g);cn(2.4,4,0x388e3c,0,8,0,g);g.scale.set(k,k,k);g.position.x=s*(9+Math.random()*12);
+var o=new THREE.Group();o.add(g);sp_(.9,0x43a047,s*8.6,.7,5,o);return o}
+function f3(s){var g=new THREE.Group();
+if(s<0){var l=cy(.3,.45,7,0x8d6e63,0,3.5,0,g);l.rotation.z=.15;for(var k=0;k<5;k++){var a=bx(4,.2,.9,0x2e9d4a,0,0,0,g);a.position.set(Math.cos(k*1.26)*1.8,7.1,Math.sin(k*1.26)*1.8);a.rotation.y=-k*1.26;a.rotation.z=.25}
+g.position.x=-(9+Math.random()*9)}
+else{bx(10+Math.random()*8,2,16,0x29b6f6,0,0,0,g);bx(10.5,.5,16.5,0xffffff,0,1.1,0,g);g.position.x=12+Math.random()*30}return g}
+var FS=[f0,f1,f2,f3],sc=[],ent=[];
+var D=0,D0=0,stage=0,sp=0,score=0,coins=0,ok=0,state='menu',shake=0,fbT=0,fbH='',cx=0,vx=0,inp=0,L=0,Rr=0,fading=false,AC=null;
+function beep(f,d,t){try{var o=AC.createOscillator(),g=AC.createGain();o.type=t||'sine';o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
+function mkSign(t,col){var cv=document.createElement('canvas');cv.width=512;cv.height=256;var x=cv.getContext('2d');x.fillStyle=col;x.fillRect(0,0,512,256);x.strokeStyle='#fff';x.lineWidth=14;x.strokeRect(7,7,498,242);x.fillStyle='#fff';x.font='bold 60px Tahoma,Arial';x.textAlign='center';x.textBaseline='middle';x.direction='rtl';
+var w=t.split(' '),l=[t];if(t.length>9&&w.length>1){var h=Math.ceil(w.length/2);l=[w.slice(0,h).join(' '),w.slice(h).join(' ')]}
+l.forEach(function(s,i){x.fillText(s,256,l.length>1?92+i*74:128)});
+return new THREE.Mesh(new THREE.PlaneGeometry(6,3),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv)}))}
+var coinG=new THREE.CylinderGeometry(.75,.75,.2,18);coinG.rotateX(Math.PI/2);
+var coinM=new THREE.MeshLambertMaterial({color:0xffc400,emissive:0x8a5a00});
+function scen(i){sc.forEach(function(m){S.remove(m)});sc=[];
+for(var k=0;k<K;k++)[-1,1].forEach(function(s){var m=FS[i](s);m.position.z=-D-k*SP-Math.random()*8+20;m.userData.s=s;S.add(m);sc.push(m)})}
+function place(i){ent.forEach(function(e){S.remove(e.m)});ent=[];
+GATES.forEach(function(g,k){var q=QS[(i*3+k)*3],cl=Math.random()<.5;
+var gt=new THREE.Group();gt.position.z=-(D0+g);
+var a=mkSign(cl?QS[(i*3+k)*3+1]:QS[(i*3+k)*3+2],'#1e88e5'),b=mkSign(cl?QS[(i*3+k)*3+2]:QS[(i*3+k)*3+1],'#f57c00');
+a.position.set(-3.5,4.6,0);b.position.set(3.5,4.6,0);gt.add(a,b);
+[-7,0,7].forEach(function(x){bx(.4,6.3,.4,0xffffff,x,3.1,0,gt)});bx(14.4,.4,.4,0xffffff,0,6.3,0,gt);
+S.add(gt);ent.push({m:gt,d:D0+g,t:'g',q:q,cl:cl,k:k,n:i*3+k+1,r:QS[(i*3+k)*3+1]});
+for(var d=g-200;d<g-40;d+=12){var c=new THREE.Mesh(coinG,coinM);c.position.set(Math.sin(d*.05)*4.2,1.3,-(D0+d));S.add(c);ent.push({m:c,d:D0+d,t:'c'})}
+[g-125,g-85].forEach(function(d){var o=new THREE.Group();cn(.85,1.7,0xff7043,0,.85,0,o);bx(1.8,.12,1.8,0xffffff,0,.05,0,o);bx(.9,.14,.9,0xffffff,0,.7,0,o);
+o.position.set((Math.sin(d*.05)>=0?-1:1)*4.4,0,-(D0+d));S.add(o);ent.push({m:o,d:D0+d,t:'o'})})})}
+function startStage(i){stage=i;D0=D;var s=ST[i];S.background=new THREE.Color(s.sky);S.fog=new THREE.Fog(s.sky,70,230);
+gnd.material.color.setHex(s.gr);road.material.color.setHex(s.rd);wat.visible=i==3;scen(i);place(i);
+var b=$('ban');b.innerHTML='المحطة '+(i+1)+' من 4<br>'+s.n;b.className='on';setTimeout(function(){b.className=''},1200);$('st').textContent=i+1}
+function reset(){D=0;sp=0;score=0;coins=0;ok=0;cx=0;vx=0;fbT=0;fading=false;car.position.x=0;startStage(0)}
+function key(e,v){var k=e.key;if(k=='ArrowLeft'||k=='a'||k=='A')L=v;if(k=='ArrowRight'||k=='d'||k=='D')Rr=v}
+addEventListener('keydown',function(e){key(e,1)});addEventListener('keyup',function(e){key(e,0)});
+[['bl',0],['br',1]].forEach(function(p){var el=$(p[0]);function on(e){e.preventDefault();if(p[1])Rr=1;else L=1}function off(){if(p[1])Rr=0;else L=0}
+el.addEventListener('pointerdown',on);['pointerup','pointerleave','pointercancel'].forEach(function(n){el.addEventListener(n,off)})});
+function begin(){AC=AC||new(window.AudioContext||window.webkitAudioContext)();$('menu').style.display='none';$('end').style.display='none';reset();state='play'}
+$('go').onclick=begin;$('again').onclick=begin;
+function finish(){state='end';var st=ok>=11?3:ok>=8?2:ok>=5?1:0;$('res').innerHTML='<div style="font-size:2.2em">'+'⭐'.repeat(st)+'☆'.repeat(3-st)+'</div>إجاباتك الصحيحة: <b>'+ok+'</b> من 12<br>النقاط: <b>'+score+'</b> &nbsp; العملات: <b>'+coins+'</b> 🪙<br>النباتات فخورة بكم!<br><small>إعداد الأستاذة: مريم الغافري</small>';$('end').style.display='flex'}
+var clk=new THREE.Clock(),q=$('q'),fr=0;
+function tick(){requestAnimationFrame(tick);var dt=Math.min(clk.getDelta(),.05),t=clk.elapsedTime,play=state=='play';
+var target=play?ST[stage].sp:(state=='menu'?14:0);sp+=(target-sp)*Math.min(1,dt*(play?1.4:2));D+=sp*dt;
+inp=play?(Rr-L):0;vx+=(inp*15-vx)*Math.min(1,dt*8);cx=Math.max(-5.8,Math.min(5.8,cx+vx*dt));
+car.position.set(cx,.02+Math.sin(t*22)*.02*sp/40,-D);car.rotation.y=-vx/15*.4;car.rotation.z=-vx/15*.05;
+wh.forEach(function(w){w.rotation.x-=sp*dt*1.9});
+rg.position.z=-D;var base=-Math.floor(D/14)*14;dash.forEach(function(d,i){d.position.z=base-(i-3)*14+D});
+gnd.position.z=-D;wat.position.z=-D;
+sc.forEach(function(m){while(m.position.z>-D+30)m.position.z-=K*SP;if(stage==3&&m.userData.s>0)m.position.y=Math.sin(t*2.6+m.position.z*.2)*.9+.2});
+if(play){
+ent.forEach(function(e){if(e.t=='c'){e.m.rotation.y+=dt*4;if(!e.got&&Math.abs(D-e.d)<1.6&&Math.abs(cx-e.m.position.x)<1.9){e.got=1;e.m.visible=false;coins++;score+=2;beep(900,.1)}}
+else if(e.t=='o'){if(!e.hit&&Math.abs(D-e.d)<1.6&&Math.abs(cx-e.m.position.x)<1.8){e.hit=1;sp*=.55;shake=.4;e.m.rotation.z=1.3;e.m.position.y=.5;beep(150,.25,'sawtooth')}}
+else if(e.t=='g'&&!e.done&&D>=e.d){e.done=1;var right=(cx<0)==e.cl;
+if(right){ok++;score+=10;sp+=6;beep(660,.12);setTimeout(function(){beep(880,.18)},120);fbH='✅ إجابة صحيحة! +10'}
+else{sp*=.6;shake=.3;beep(180,.3,'sawtooth');fbH='❌ الإجابة الصحيحة: '+e.r}fbT=2.4}});
+var cur=ent.filter(function(e){return e.t=='g'&&!e.done})[0];
+if(fbT>0){fbT-=dt;q.style.display='block';q.innerHTML=fbH}
+else if(cur&&cur.d-D<320){q.style.display='block';q.innerHTML='<small>السؤال '+cur.n+' من 12</small>'+cur.q+(cur.n==10?SVGI:'')+'<div class="a"><b style="background:#1e88e5">◀ يسار</b><b style="background:#f57c00">يمين ▶</b></div>'}
+else q.style.display='none';
+if(D-D0>=LEN&&!fading){if(stage==3){q.style.display='none';finish()}else{fading=true;$('fade').style.opacity=1;setTimeout(function(){startStage(stage+1);$('fade').style.opacity=0;fading=false},550)}}}
+else q.style.display='none';
+shake=Math.max(0,shake-dt);var sh=shake*(Math.random()-.5)*1.2;
+cam.position.set(cx*.6+sh,4.6+sh*.5,-D+9.5);cam.lookAt(cx*.4,1.5,-D-12);
+if(fr++%4==0){$('sc').textContent=score;$('cn').textContent=coins;$('sd').textContent=Math.round(sp*3);$('bar').firstChild.style.width=Math.min(100,(D-0)/(4*LEN)*100)+'%'}
+R.render(S,cam)}
+startStage(0);tick();
+})();
+</script></body></html>
